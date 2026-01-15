@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 import '../providers/history_providers.dart';
-import '../providers/report_provider.dart';
+import '../providers/reflection_provider.dart';
+
+import '../widgets/daily_reflection_card.dart';
+import '../widgets/reflection_trend_card.dart';
+
 import 'pdf_preview_page.dart';
 
 /// ===============================
@@ -30,9 +33,8 @@ $insight
 _Dihasilkan oleh InsightMind_
 ''';
 
-  final uri = Uri.parse(
-    'https://wa.me/?text=${Uri.encodeComponent(message)}',
-  );
+  final uri =
+      Uri.parse('https://wa.me/?text=${Uri.encodeComponent(message)}');
 
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
@@ -46,6 +48,7 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(historyListProvider);
+    final reflectionTrend = ref.watch(reflectionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,14 +80,31 @@ class DashboardPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
+              /// 🔹 RINGKASAN RISIKO
               _SummaryCard(
                 tinggi: tinggi,
                 sedang: sedang,
                 rendah: rendah,
               ),
+
               const SizedBox(height: 24),
+
+              /// 🔹 CHECK-IN REFLEKTIF
+              const DailyReflectionCard(),
+
+              const SizedBox(height: 24),
+
+              /// 🔹 TREN REFLEKSI
+              ReflectionTrendCard(trend: reflectionTrend),
+
+              const SizedBox(height: 24),
+
+              /// 🔹 TREN SKOR SCREENING
               _TrendCard(records: records),
+
               const SizedBox(height: 24),
+
+              /// 🔹 INSIGHT + EXPORT
               _InsightCard(
                 insight: insight,
                 tinggi: tinggi,
@@ -117,12 +137,6 @@ class _EmptyState extends StatelessWidget {
             'Belum ada data analytics.\nLakukan screening terlebih dahulu.',
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Kembali ke Home'),
-          ),
         ],
       ),
     );
@@ -130,7 +144,7 @@ class _EmptyState extends StatelessWidget {
 }
 
 /// ===============================
-/// SUMMARY CARD
+/// SUMMARY CARD (FIXED)
 /// ===============================
 class _SummaryCard extends StatelessWidget {
   final int tinggi;
@@ -169,11 +183,10 @@ class _SummaryCard extends StatelessWidget {
 }
 
 /// ===============================
-/// TREND CARD
+/// TREND CARD (SPARKLINE)
 /// ===============================
 class _TrendCard extends StatelessWidget {
   final List records;
-
   const _TrendCard({required this.records});
 
   @override
@@ -200,8 +213,7 @@ class _TrendCard extends StatelessWidget {
 }
 
 /// ===============================
-/// INSIGHT CARD (FINAL)
-//  → HANYA 2 TOMBOL: UNDUH PDF & WA
+/// INSIGHT CARD
 /// ===============================
 class _InsightCard extends StatelessWidget {
   final String insight;
@@ -224,6 +236,11 @@ class _InsightCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Insight',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
             Text(insight),
             const SizedBox(height: 16),
             Row(
