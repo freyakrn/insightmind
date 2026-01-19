@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/history_providers.dart';
-import '../providers/report_provider.dart';
+import '../providers/reflection_provider.dart';
+
+import '../widgets/daily_reflection_card.dart';
+import '../widgets/reflection_trend_card.dart';
+
+import 'pdf_preview_page.dart';
 
 
 Future<void> shareInsightToWhatsApp({
@@ -27,9 +31,8 @@ $insight
 _Dihasilkan oleh InsightMind_
 ''';
 
-  final uri = Uri.parse(
-    'https://wa.me/?text=${Uri.encodeComponent(message)}',
-  );
+  final uri =
+      Uri.parse('https://wa.me/?text=${Uri.encodeComponent(message)}');
 
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
@@ -40,21 +43,7 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(historyListProvider);
-
-    final reportState = ref.watch(reportProvider);
-    final reportNotifier = ref.read(reportProvider.notifier);
-
-    ref.listen(reportProvider, (previous, next) {
-      if (previous?.reportFile == null &&
-          next.reportFile != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Laporan PDF berhasil disimpan'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    });
+    final reflectionTrend = ref.watch(reflectionProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -78,10 +67,9 @@ class DashboardPage extends ConsumerWidget {
           String insight = 'Kondisi mental relatif stabil.';
           if (tinggi > sedang && tinggi > rendah) {
             insight =
-                'Terdapat kecenderungan risiko tinggi. Pertimbangkan relaksasi atau konsultasi.';
+                'Terdapat kecenderungan risiko tinggi. Pertimbangkan relaksasi atau konsultasi profesional.';
           } else if (sedang > rendah) {
-            insight =
-                'Risiko berada pada tingkat sedang dan perlu dipantau.';
+            insight = 'Risiko berada pada tingkat sedang dan perlu dipantau.';
           }
 
           return ListView(
@@ -92,16 +80,26 @@ class DashboardPage extends ConsumerWidget {
                 sedang: sedang,
                 rendah: rendah,
               ),
+
               const SizedBox(height: 24),
+
+              const DailyReflectionCard(),
+
+              const SizedBox(height: 24),
+
+              ReflectionTrendCard(trend: reflectionTrend),
+
+              const SizedBox(height: 24),
+
               _TrendCard(records: records),
+
               const SizedBox(height: 24),
+
               _InsightCard(
                 insight: insight,
                 tinggi: tinggi,
                 sedang: sedang,
                 rendah: rendah,
-                reportState: reportState,
-                reportNotifier: reportNotifier,
               ),
             ],
           );
@@ -125,12 +123,6 @@ class _EmptyState extends StatelessWidget {
           const Text(
             'Belum ada data analytics.\nLakukan screening terlebih dahulu.',
             textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('Kembali ke Home'),
           ),
         ],
       ),
@@ -176,7 +168,6 @@ class _SummaryCard extends StatelessWidget {
 
 class _TrendCard extends StatelessWidget {
   final List records;
-
   const _TrendCard({required this.records});
 
   @override
@@ -195,16 +186,6 @@ class _TrendCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             SizedBox(height: 200, child: _Sparkline(records: records)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(DateFormat('dd/MM/yyyy')
-                    .format(records.first.timestamp)),
-                Text(DateFormat('dd/MM/yyyy')
-                    .format(records.last.timestamp)),
-              ],
-            ),
           ],
         ),
       ),
@@ -217,59 +198,54 @@ class _InsightCard extends StatelessWidget {
   final int tinggi;
   final int sedang;
   final int rendah;
-  final ReportState reportState;
-  final ReportNotifier reportNotifier;
 
   const _InsightCard({
     required this.insight,
     required this.tinggi,
     required this.sedang,
     required this.rendah,
-    required this.reportState,
-    required this.reportNotifier,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Insight:\n$insight'),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: [
-                Chip(label: Text('Tinggi: $tinggi')),
-                Chip(label: Text('Sedang: $sedang')),
-                Chip(label: Text('Rendah: $rendah')),
-              ],
+            const Text(
+              'Insight',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 8),
+            Text(insight),
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: FilledButton.icon(
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: const Text('PDF'),
+                    icon: const Icon(Icons.download),
+                    label: const Text('Unduh PDF'),
                     onPressed: () {
-                      reportNotifier.generateReport(
-                        userName: 'Anita Sari',
-                        age: 21,
-                        date: DateFormat('dd MMM yyyy')
-                            .format(DateTime.now()),
-                        stressScore: tinggi.toDouble(),
-                        moodScore: sedang.toDouble(),
-                        conclusion: insight,
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PdfPreviewPage(
+                            insight: insight,
+                            tinggi: tinggi,
+                            sedang: sedang,
+                            rendah: rendah,
+                            nama: 'Yaya',
+                            umur: 21,
+                            tanggalLahir: '01 Januari 2002',
+                          ),
+                        ),
                       );
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => shareInsightToWhatsApp(

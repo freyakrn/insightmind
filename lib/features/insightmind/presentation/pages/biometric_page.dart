@@ -15,6 +15,12 @@ class BiometricPage extends ConsumerWidget {
     final ppg = ref.watch(ppgProvider);
     final score = ref.watch(scoreProvider);
 
+    /// =======================
+    /// KONDISI TOMBOL AI
+    /// =======================
+    final bool canPredict =
+        accelFeat.isStable && ppg.samples.length >= 30;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -39,7 +45,7 @@ class BiometricPage extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 100, 20, 20),
           children: [
-            const _SectionTitle(
+            _SectionTitle(
               icon: Icons.directions_run,
               title: "Accelerometer",
             ),
@@ -54,13 +60,42 @@ class BiometricPage extends ConsumerWidget {
                     label: "Variance",
                     value: accelFeat.variance.toStringAsFixed(4),
                   ),
+                  const SizedBox(height: 12),
+
+                  /// ===== STATUS SENSOR =====
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        accelFeat.isStable
+                            ? Icons.check_circle
+                            : Icons.warning_amber_rounded,
+                        color: accelFeat.isStable
+                            ? Colors.green
+                            : Colors.redAccent,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        accelFeat.isStable
+                            ? "Sensor Stabil"
+                            : "Sensor Bergerak",
+                        style: TextStyle(
+                          color: accelFeat.isStable
+                              ? Colors.green
+                              : Colors.redAccent,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
 
             const SizedBox(height: 28),
 
-            const _SectionTitle(
+            _SectionTitle(
               icon: Icons.favorite,
               title: "PPG via Kamera",
             ),
@@ -81,10 +116,10 @@ class BiometricPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // ===== Start / Stop Capture =====
                   GestureDetector(
                     onTap: () {
-                      final notifier = ref.read(ppgProvider.notifier);
+                      final notifier =
+                          ref.read(ppgProvider.notifier);
                       ppg.capturing
                           ? notifier.stopCapture()
                           : notifier.startCapture();
@@ -95,9 +130,9 @@ class BiometricPage extends ConsumerWidget {
                         gradient: LinearGradient(
                           colors: ppg.capturing
                               ? [Colors.redAccent, Colors.deepOrange]
-                              : [
-                                  const Color(0xFF6366F1),
-                                  const Color(0xFF8B5CF6),
+                              : const [
+                                  Color(0xFF6366F1),
+                                  Color(0xFF8B5CF6),
                                 ],
                         ),
                         borderRadius: BorderRadius.circular(16),
@@ -110,10 +145,13 @@ class BiometricPage extends ConsumerWidget {
                         ],
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
                         children: [
                           Icon(
-                            ppg.capturing ? Icons.stop : Icons.play_arrow,
+                            ppg.capturing
+                                ? Icons.stop
+                                : Icons.play_arrow,
                             color: Colors.white,
                           ),
                           const SizedBox(width: 8),
@@ -133,8 +171,10 @@ class BiometricPage extends ConsumerWidget {
                   ),
 
                   const SizedBox(height: 16),
+
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "Progress Sampel PPG",
@@ -146,12 +186,14 @@ class BiometricPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius:
+                            BorderRadius.circular(10),
                         child: LinearProgressIndicator(
-                          value:
-                              (ppg.samples.length / 30).clamp(0.0, 1.0),
+                          value: (ppg.samples.length / 30)
+                              .clamp(0.0, 1.0),
                           minHeight: 8,
-                          backgroundColor: Colors.grey.shade300,
+                          backgroundColor:
+                              Colors.grey.shade300,
                           valueColor:
                               const AlwaysStoppedAnimation(
                                   Colors.deepPurple),
@@ -173,61 +215,91 @@ class BiometricPage extends ConsumerWidget {
 
             const SizedBox(height: 32),
 
-            // ===== Hitung Prediksi AI =====
+            /// =========================
+            /// TOMBOL AI (AUTO DISABLE)
+            /// =========================
             GestureDetector(
-              onTap: () {
-                if (ppg.samples.length < 30) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text("Ambil minimal 30 sampel PPG dahulu"),
-                    ),
-                  );
-                  return;
-                }
+              onTap: canPredict
+                  ? () {
+                      final fv = FeatureVector(
+                        screeningScore: score.toDouble(),
+                        activityMean: accelFeat.mean,
+                        activityVar: accelFeat.variance,
+                        ppgMean: ppg.mean,
+                        ppgVar: ppg.variance,
+                      );
 
-                final fv = FeatureVector(
-                  screeningScore: score.toDouble(),
-                  activityMean: accelFeat.mean,
-                  activityVar: accelFeat.variance,
-                  ppgMean: ppg.mean,
-                  ppgVar: ppg.variance,
-                );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AIResultPage(fv: fv),
+                        ),
+                      );
+                    }
+                  : () {
+                      String msg = "";
 
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AIResultPage(fv: fv),
-                  ),
-                );
-              },
-              child: Container(
+                      if (!accelFeat.isStable) {
+                        msg =
+                            "Sensor harus stabil sebelum analisis AI";
+                      } else {
+                        msg =
+                            "Ambil minimal 30 sampel PPG dahulu";
+                      }
+
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                        SnackBar(content: Text(msg)),
+                      );
+                    },
+              child: AnimatedContainer(
+                duration:
+                    const Duration(milliseconds: 250),
                 height: 58,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFF7C3AED),
-                      Color(0xFF9333EA),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black38,
-                      blurRadius: 12,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
+                  gradient: canPredict
+                      ? const LinearGradient(
+                          colors: [
+                            Color(0xFF7C3AED),
+                            Color(0xFF9333EA),
+                          ],
+                        )
+                      : LinearGradient(
+                          colors: [
+                            Colors.grey.shade400,
+                            Colors.grey.shade500,
+                          ],
+                        ),
+                  borderRadius:
+                      BorderRadius.circular(20),
+                  boxShadow: canPredict
+                      ? const [
+                          BoxShadow(
+                            color: Colors.black38,
+                            blurRadius: 12,
+                            offset: Offset(0, 6),
+                          ),
+                        ]
+                      : [],
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.insights, color: Colors.white),
-                    SizedBox(width: 10),
+                    Icon(
+                      Icons.insights,
+                      color: canPredict
+                          ? Colors.white
+                          : Colors.black38,
+                    ),
+                    const SizedBox(width: 10),
                     Text(
                       "Hitung Prediksi AI",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: canPredict
+                            ? Colors.white
+                            : Colors.black38,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -316,7 +388,8 @@ class _MetricTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,

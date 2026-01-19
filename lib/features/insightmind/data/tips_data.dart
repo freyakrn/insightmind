@@ -66,14 +66,6 @@ final List<DailyTip> dailyTips = [
         'Latihan kesadaran ini membantu mengurangi kecemasan dan meningkatkan kesehatan mental.',
   ),
   DailyTip(
-    title: 'Tidur yang Berkualitas',
-    description:
-        'Usahakan untuk tidur cukup dan berkualitas setiap malam. '
-        'Tidur berperan penting dalam proses pemulihan otak, pengaturan emosi, '
-        'serta daya ingat. Tidur yang baik membantu kamu menjalani hari dengan energi '
-        'dan fokus yang lebih stabil.',
-  ),
-  DailyTip(
     title: 'Luangkan Waktu untuk Diri Sendiri',
     description:
         'Berikan dirimu waktu untuk melakukan hal yang kamu nikmati, meskipun hanya sebentar. '

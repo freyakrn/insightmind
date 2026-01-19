@@ -9,7 +9,6 @@ import 'biometric_page.dart';
 import 'dashboard_page.dart';
 import '../widgets/tips_card.dart';
 
-
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -22,8 +21,8 @@ class HomePage extends ConsumerWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFFFFF6E5), // warm cream
-              Color(0xFFF3E8FF), // soft lavender
+              Color(0xFFFFF6E5),
+              Color(0xFFF3E8FF),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -33,8 +32,7 @@ class HomePage extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Center(child: Text('Terjadi kesalahan: $e')),
           data: (records) {
-            final lastScore =
-                records.isNotEmpty ? records.last.score : 0;
+            final lastScore = records.isNotEmpty ? records.last.score : 0;
 
             return CustomScrollView(
               slivers: [
@@ -44,7 +42,6 @@ class HomePage extends ConsumerWidget {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       const SizedBox(height: 8),
-
                       _InsightCard(score: lastScore),
                       const SizedBox(height: 24),
                       const _QuickMoodSection(),
@@ -64,8 +61,7 @@ class HomePage extends ConsumerWidget {
                         ),
                         title: '📝 Screening Psikologis',
                         description:
-                            'Jawab kuisioner singkat untuk mendapatkan indikasi awal '
-                            'kondisi kesehatan mental Anda.',
+                            'Jawab kuisioner singkat untuk mendapatkan indikasi awal kondisi kesehatan mental Anda.',
                         primaryLabel: 'Mulai Screening',
                         secondaryLabel: 'Dashboard',
                         onPrimary: () => Navigator.push(
@@ -91,8 +87,7 @@ class HomePage extends ConsumerWidget {
                         ),
                         title: '📡 Sensor & AI Biometrik',
                         description:
-                            'Gunakan kamera dan sensor perangkat untuk ekstraksi '
-                            'fitur biometrik dan prediksi risiko berbasis AI.',
+                            'Gunakan kamera dan sensor perangkat untuk ekstraksi fitur biometrik dan prediksi risiko berbasis AI.',
                         primaryLabel: 'Buka Modul AI',
                         onPrimary: () => Navigator.push(
                           context,
@@ -107,7 +102,6 @@ class HomePage extends ConsumerWidget {
                       const SizedBox(height: 40),
                       const TipsCard(),
                       const SizedBox(height: 40),
-
                     ]),
                   ),
                 ),
@@ -139,8 +133,8 @@ class _HeroAppBar extends StatelessWidget {
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(0xFFB9C6FF), // soft indigo
-                Color(0xFFD8DEFF), // pastel
+                Color(0xFFB9C6FF),
+                Color(0xFFD8DEFF),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -206,54 +200,166 @@ class _InsightCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.9),
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF5B6EF5), Color(0xFF8F9CFF)],
-                  ),
-                ),
-                child: const Icon(
-                  Icons.insights_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
+              const Icon(Icons.insights_rounded, size: 40),
               const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '📊 Skor Terakhir',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      score == 0 ? '-' : '$score',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+              Text(
+                score == 0 ? '-' : '$score',
+                style:
+                    const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// =======================
+/// QUICK MOOD SECTION
+/// =======================
+class _QuickMoodSection extends ConsumerWidget {
+  const _QuickMoodSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedMood = ref.watch(moodProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Bagaimana perasaanmu hari ini?',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _MoodItem(
+              emoji: '😊',
+              label: 'Baik',
+              color: const Color(0xFFFFE8B6),
+              selected: selectedMood == MoodType.baik,
+              onTap: () {
+                ref.read(moodProvider.notifier).state = MoodType.baik;
+                showMoodSuggestion(context, 'Baik');
+              },
+            ),
+            _MoodItem(
+              emoji: '😌',
+              label: 'Tenang',
+              color: const Color(0xFFDFF5EA),
+              selected: selectedMood == MoodType.tenang,
+              onTap: () {
+                ref.read(moodProvider.notifier).state = MoodType.tenang;
+                showMoodSuggestion(context, 'Tenang');
+              },
+            ),
+            _MoodItem(
+              emoji: '😟',
+              label: 'Cemas',
+              color: const Color(0xFFFFE1E1),
+              selected: selectedMood == MoodType.cemas,
+              onTap: () {
+                ref.read(moodProvider.notifier).state = MoodType.cemas;
+                showMoodSuggestion(context, 'Cemas');
+              },
+            ),
+            _MoodItem(
+              emoji: '😴',
+              label: 'Lelah',
+              color: const Color(0xFFE8E4FF),
+              selected: selectedMood == MoodType.lelah,
+              onTap: () {
+                ref.read(moodProvider.notifier).state = MoodType.lelah;
+                showMoodSuggestion(context, 'Lelah');
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// =======================
+/// MOOD ITEM
+/// =======================
+class _MoodItem extends StatelessWidget {
+  final String emoji;
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _MoodItem({
+    required this.emoji,
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.12),
+                      blurRadius: 10,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Column(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 26)),
+              const SizedBox(height: 6),
+              Text(label),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// =======================
+/// SECTION TITLE
+/// =======================
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionTitle({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        Text(subtitle, style: const TextStyle(color: Colors.grey)),
+      ],
     );
   }
 }
@@ -291,61 +397,23 @@ class _FeatureTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: gradient,
-            ),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
+          Icon(icon, size: 32),
           const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
+          Text(title,
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(description),
           const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onPrimary,
-              child: Text(primaryLabel),
-            ),
-          ),
-          if (secondaryLabel != null && onSecondary != null) ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onSecondary,
-                child: Text(secondaryLabel!),
-              ),
-            ),
-          ],
-          if (footer != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              footer!,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
+          FilledButton(onPressed: onPrimary, child: Text(primaryLabel)),
+          if (secondaryLabel != null && onSecondary != null)
+            OutlinedButton(
+                onPressed: onSecondary, child: Text(secondaryLabel!)),
+          if (footer != null) Text(footer!),
         ],
       ),
     );
@@ -353,174 +421,46 @@ class _FeatureTile extends StatelessWidget {
 }
 
 /// =======================
-/// SECTION TITLE
+/// MOOD SUGGESTION POPUP
 /// =======================
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  final String subtitle;
+void showMoodSuggestion(BuildContext context, String mood) {
+  String title = '';
+  String message = '';
 
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  switch (mood) {
+    case 'Baik':
+      title = 'Kondisimu Baik 😊';
+      message =
+          'Tetap jaga pola tidur, makan sehat, dan luangkan waktu untuk diri sendiri.';
+      break;
+    case 'Tenang':
+      title = 'Perasaan Tenang 😌';
+      message =
+          'Pertahankan rutinitas positif seperti olahraga ringan dan meditasi.';
+      break;
+    case 'Cemas':
+      title = 'Merasa Cemas 😟';
+      message =
+          'Coba tarik napas dalam-dalam 4 detik, tahan 4 detik, lalu hembuskan 6 detik.';
+      break;
+    case 'Lelah':
+      title = 'Merasa Lelah 😴';
+      message =
+          'Tubuhmu butuh istirahat. Cobalah tidur cukup dan kurangi aktivitas berat.';
+      break;
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 21,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: const TextStyle(color: Colors.grey),
-        ),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Mengerti'),
+        )
       ],
-    );
-  }
+    ),
+  );
 }
-
-/// =======================
-/// QUICK MOOD EMOJI
-/// =======================
-class _QuickMoodSection extends ConsumerWidget {
-  const _QuickMoodSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedMood = ref.watch(moodProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Bagaimana perasaanmu hari ini?',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _MoodItem(
-              emoji: '😊',
-              label: 'Baik',
-              color: const Color(0xFFFFE8B6),
-              mood: MoodType.baik,
-              selected: selectedMood == MoodType.baik,
-              onTap: () =>
-                  ref.read(moodProvider.notifier).state = MoodType.baik,
-            ),
-            _MoodItem(
-              emoji: '😌',
-              label: 'Tenang',
-              color: const Color(0xFFDFF5EA),
-              mood: MoodType.tenang,
-              selected: selectedMood == MoodType.tenang,
-              onTap: () =>
-                  ref.read(moodProvider.notifier).state = MoodType.tenang,
-            ),
-            _MoodItem(
-              emoji: '😟',
-              label: 'Cemas',
-              color: const Color(0xFFFFE1E1),
-              mood: MoodType.cemas,
-              selected: selectedMood == MoodType.cemas,
-              onTap: () =>
-                  ref.read(moodProvider.notifier).state = MoodType.cemas,
-            ),
-            _MoodItem(
-              emoji: '😴',
-              label: 'Lelah',
-              color: const Color(0xFFE8E4FF),
-              mood: MoodType.lelah,
-              selected: selectedMood == MoodType.lelah,
-              onTap: () =>
-                  ref.read(moodProvider.notifier).state = MoodType.lelah,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-
-/// =======================
-/// MOOD ITEM
-/// =======================
-class _MoodItem extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final Color color;
-  final MoodType mood;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _MoodItem({
-    required this.emoji,
-    required this.label,
-    required this.color,
-    required this.mood,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedScale(
-          scale: selected ? 1.08 : 1.0,
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : [],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  emoji,
-                  style: const TextStyle(fontSize: 26),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight:
-                        selected ? FontWeight.bold : FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-

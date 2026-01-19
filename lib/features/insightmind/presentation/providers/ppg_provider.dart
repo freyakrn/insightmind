@@ -1,4 +1,4 @@
-// WEEK 6: CAMERA BASED PPG-LIKE PROVIDER (FINAL)
+// WEEK 6: CAMERA BASED PPG-LIKE PROVIDER (FINAL + RESET)
 import 'dart:math';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
@@ -57,69 +57,69 @@ class PpgNotifier extends StateNotifier<PpgState> {
   PpgNotifier() : super(PpgState.initial());
 
   CameraController? _controller;
+  int _sessionId = 0;
 
+  /// =======================
   /// START CAPTURE
+  /// =======================
   Future<void> startCapture() async {
-    // ⛔ Web tidak support image stream
-    if (kIsWeb) return;
+  if (kIsWeb || state.capturing) return;
 
-    // ⛔ Cegah double start
-    if (state.capturing) return;
+  final int currentSession = ++_sessionId;
 
-    final cameras = await availableCameras();
-    final cam = cameras.first;
+  final cameras = await availableCameras();
+  final cam = cameras.first;
 
-    _controller = CameraController(
-      cam,
-      ResolutionPreset.low,
-      enableAudio: false,
+  _controller = CameraController(
+    cam,
+    ResolutionPreset.low,
+    enableAudio: false,
+  );
+
+  await _controller!.initialize();
+
+  state = state.copyWith(capturing: true);
+
+  await _controller!.startImageStream((image) {
+    // ❗ BLOK CALLBACK LAMA
+    if (!state.capturing || currentSession != _sessionId) return;
+
+    final plane = image.planes.first;
+    final buffer = plane.bytes;
+
+    double sum = 0;
+    int count = 0;
+
+    for (int i = 0; i < buffer.length; i += 50) {
+      sum += buffer[i];
+      count++;
+    }
+
+    final meanY = sum / count;
+
+    final samples = [...state.samples, meanY];
+    if (samples.length > 300) samples.removeAt(0);
+
+    final mean =
+        samples.reduce((a, b) => a + b) / samples.length;
+
+    final variance = samples.fold<double>(
+          0.0,
+          (s, x) => s + pow(x - mean, 2),
+        ) /
+        (samples.length - 1).clamp(1, double.infinity);
+
+    state = state.copyWith(
+      samples: samples,
+      mean: mean,
+      variance: variance,
     );
+  });
+}
 
-    await _controller!.initialize();
-
-    state = state.copyWith(capturing: true);
-
-    await _controller!.startImageStream((image) {
-      // ⛔ Safety stop
-      if (!state.capturing) return;
-
-      final plane = image.planes.first;
-      final buffer = plane.bytes;
-
-      double sum = 0;
-      int count = 0;
-
-      // sampling ringan
-      for (int i = 0; i < buffer.length; i += 50) {
-        sum += buffer[i];
-        count++;
-      }
-
-      final meanY = sum / count;
-
-      // sliding window max 300
-      final samples = [...state.samples, meanY];
-      if (samples.length > 300) {
-        samples.removeAt(0);
-      }
-
-      final mean =
-          samples.reduce((a, b) => a + b) / samples.length;
-      final variance = samples.fold(
-            0.0,
-            (s, x) => s + pow(x - mean, 2),
-          ) /
-          max(1, samples.length - 1);
-
-      state = state.copyWith(
-        samples: samples,
-        mean: mean,
-        variance: variance,
-      );
-    });
-  }
-
+  /// =======================
   /// STOP CAPTURE
+  /// =======================
   Future<void> stopCapture() async {
     if (!state.capturing) return;
 
@@ -132,5 +132,18 @@ class PpgNotifier extends StateNotifier<PpgState> {
       await _controller!.dispose();
       _controller = null;
     }
+  }
+
+  /// =======================
+  /// RESET TOTAL (INI KUNCI)
+  /// =======================
+  Future<void> reset() async {
+    // hentikan stream & kamera
+    if (state.capturing) {
+      await stopCapture();
+    }
+
+    // reset state ke awal
+    state = PpgState.initial();
   }
 }
