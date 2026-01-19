@@ -6,9 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/history_providers.dart';
 import '../providers/report_provider.dart';
 
-/// ===============================
-/// SHARE INSIGHT TO WHATSAPP
-/// ===============================
+
 Future<void> shareInsightToWhatsApp({
   required String insight,
   required int tinggi,
@@ -36,9 +34,6 @@ _Dihasilkan oleh InsightMind_
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
-/// ===============================
-/// DASHBOARD PAGE
-/// ===============================
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
@@ -49,7 +44,6 @@ class DashboardPage extends ConsumerWidget {
     final reportState = ref.watch(reportProvider);
     final reportNotifier = ref.read(reportProvider.notifier);
 
-    /// ✅ NOTIFIKASI PDF BERHASIL
     ref.listen(reportProvider, (previous, next) {
       if (previous?.reportFile == null &&
           next.reportFile != null) {
@@ -117,9 +111,6 @@ class DashboardPage extends ConsumerWidget {
   }
 }
 
-/// ===============================
-/// EMPTY STATE
-/// ===============================
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -147,9 +138,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// ===============================
-/// SUMMARY CARD
-/// ===============================
 class _SummaryCard extends StatelessWidget {
   final int tinggi;
   final int sedang;
@@ -186,9 +174,6 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-/// ===============================
-/// TREND CARD
-/// ===============================
 class _TrendCard extends StatelessWidget {
   final List records;
 
@@ -227,9 +212,6 @@ class _TrendCard extends StatelessWidget {
   }
 }
 
-/// ===============================
-/// INSIGHT CARD (PDF & WA ONLY)
-/// ===============================
 class _InsightCard extends StatelessWidget {
   final String insight;
   final int tinggi;
@@ -308,9 +290,6 @@ class _InsightCard extends StatelessWidget {
   }
 }
 
-/// ===============================
-/// SPARKLINE
-/// ===============================
 class _Sparkline extends StatelessWidget {
   final List records;
   const _Sparkline({required this.records});
